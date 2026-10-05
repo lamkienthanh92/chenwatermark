@@ -19,8 +19,10 @@ Không có máy chủ, không gửi dữ liệu đi đâu. Đề thi chỉ nằm
 - **Ảnh chỉ có câu hỏi**, khung cố định 1000×560 px, chữ tự co để vừa khung, nên chụp một lần là thấy đủ trên cả laptop và điện thoại. Câu quá dài sẽ được đánh dấu "dài" và ảnh cao hơn.
 - **Khu vực "Kiểm tra câu hỏi"**: xem và sửa trực tiếp nội dung từng câu trước khi tạo ảnh. Có nút thử nghiệm "Tự bỏ câu dẫn".
 - **Thông báo quy chế thi ở góc trên và góc dưới ảnh** (chữ nhìn thấy được, song ngữ Việt/Anh) và watermark chữ mờ phủ nền cùng viền chữ siêu nhỏ.
+- **Chữ chéo "BÀI THI · CẤM DÙNG AI" ở giữa ảnh** (xám nhạt, nhìn thấy được, khó cắt bỏ mà không mất nội dung câu hỏi).
 - Phần **"Kiểm tra hiển thị"** mô phỏng khung điện thoại dọc và laptop ngang, kèm cỡ chữ thực tế ước tính. Công tắc "Xem như AI thấy" tăng tương phản để kiểm tra watermark có trong ảnh.
 - **Tải PNG từng câu hoặc cả zip** (kèm CSV ghi đáp án đúng và đáp án mồi nếu dùng mẫu có `{TRAP}`).
+- **Xuất Moodle XML**: mỗi câu là ảnh làm đề bài (nhúng base64) kèm 4 phương án chữ, đáp án đúng theo `ANSWER`, bật trộn đáp án. Import tại *Ngân hàng câu hỏi → Nhập → Moodle XML*.
 - **Chèn ảnh vào `.docx` gốc**: thay đoạn câu hỏi bằng ảnh, giữ nguyên đáp án A–D và dòng `ANSWER`.
 
 ## Dùng online (GitHub Pages)
@@ -48,7 +50,7 @@ Nếu muốn chạy offline, tải các file đó về và sửa đường dẫn
 - Thông báo quy chế hiện rõ chỉ có tác dụng răn đe sinh viên, và có thể khiến một số AI từ chối hoặc nhắc nhở. Không có gì đảm bảo.
 - Ảnh hóa câu hỏi chỉ chặn được sao chép văn bản. Sinh viên vẫn có thể chụp màn hình rồi hỏi AI.
 - **Khả năng tiếp cận:** người dùng trình đọc màn hình không đọc được câu hỏi trong ảnh. Cần có phương án hỗ trợ riêng cho sinh viên có nhu cầu.
-- Các hệ thống duyệt đề, nhập đề kiểu Aiken (ví dụ Moodle) thường **không nhận ảnh nhúng trong file Word**. Hãy thử trên bài thi nháp trước khi dùng thật.
+- Moodle không đọc file Word, và định dạng Aiken chỉ nhận chữ thuần nên mất ảnh. Với Moodle hãy dùng **Moodle XML** do app xuất. File có thể nặng vài chục MB; kiểm tra giới hạn tải lên của hệ thống và thử trên bài thi nháp trước khi dùng thật.
 - Chỉ lưu và nộp ảnh dạng **PNG**. JPG nén sẽ làm mất watermark mờ.
 - Biện pháp bền hơn là thay đổi chính **nội dung đề**: số liệu và tình huống riêng của lớp, hình ảnh hoặc bảng cần đọc, mỗi sinh viên một mã đề, giới hạn thời gian theo câu, giám sát hoặc vấn đáp ngắn.
 

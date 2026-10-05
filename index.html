@@ -142,14 +142,16 @@ textarea.revta{font-family:inherit;font-size:14px;min-height:64px;line-height:1.
     <div class="range"><input type="range" id="delta" min="1" max="12" value="4"><output id="deltaO">4</output></div>
     <div class="hint">Càng thấp càng khó thấy bằng mắt thường nhưng AI cũng khó đọc hơn. Nên bắt đầu từ 4. Vì đáp án được trộn ở hệ thống thi, đáp án mồi là <b>nội dung</b> một phương án sai thật trong câu đó, không phải chữ cái A/B/C/D.</div>
     <label class="check"><input type="checkbox" id="footer" checked> Hiện thông báo quy chế thi ở góc trên và góc dưới ảnh (sinh viên và AI đều thấy)</label>
+    <label class="check"><input type="checkbox" id="diag" checked> Chữ chéo "BÀI THI · CẤM DÙNG AI" ở giữa ảnh (khó cắt bỏ, AI đọc rõ hơn chữ mờ)</label>
     <label class="check"><input type="checkbox" id="showNum"> In số câu lên ảnh (tắt nếu hệ thống thi tự đánh số hoặc xáo thứ tự câu)</label>
     <div class="btns">
       <button id="gen">Tạo ảnh</button>
       <button id="zip" class="ghost" disabled>Tải tất cả (.zip)</button>
       <button id="embed" disabled>Chèn ảnh vào file .docx gốc</button>
+      <button id="xml" disabled>Xuất Moodle XML</button>
     </div>
     <p class="status" id="status" role="status"></p>
-    <div class="hint">Nút "Chèn ảnh vào file .docx gốc" chỉ bật khi bạn nạp đề bằng file .docx. App thay từng câu hỏi bằng ảnh, giữ nguyên các đáp án A–D và dòng ANSWER.</div>
+    <div class="hint"><b>Dùng Moodle:</b> Moodle không đọc ảnh trong file Word, và định dạng Aiken (A./B./C./D. + ANSWER:) chỉ nhận chữ thuần. Hãy bấm "Xuất Moodle XML": mỗi câu là ảnh làm đề bài kèm 4 phương án chữ (được trộn khi thi). Import tại Ngân hàng câu hỏi → Nhập → Moodle XML.<br>Nút "Chèn ảnh vào file .docx gốc" chỉ bật khi bạn nạp đề bằng file .docx. App thay từng câu hỏi bằng ảnh, giữ nguyên các đáp án A–D và dòng ANSWER.</div>
   </div>
 
   <div class="panel" id="resPanel" hidden>
@@ -371,6 +373,16 @@ function render(q, cfg){
   ctx.textBaseline = 'top'; ctx.fillStyle = '#111111';
   ctx.font = `600 ${fs}px ${FONT}`;
   qLines.forEach(l => { ctx.fillText(l, pad, y); y += lh; });
+  if (cfg.diag){
+    ctx.save();
+    ctx.translate(W/2, g + TOP + (H - g*2 - TOP - BOT)/2);
+    ctx.rotate(-Math.PI/14);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(90,100,118,0.17)';
+    ctx.font = `700 64px ${FONT}`; ctx.fillText('BÀI THI · CẤM DÙNG AI', 0, -16);
+    ctx.font = `700 34px ${FONT}`; ctx.fillText('EXAM IN PROGRESS · NO AI', 0, 34);
+    ctx.restore();
+  }
   if (cfg.footer){
     ctx.fillStyle = '#eef1f5';
     ctx.fillRect(g+1, g+1, W-g*2-2, TOP-1);
@@ -437,7 +449,7 @@ $('gen').addEventListener('click', async () => {
   if (!tpl.value.trim()){ setStatus('Nội dung lệnh ẩn đang trống.', 'err'); return; }
   setStatus('Đang tạo ảnh…');
   try { await document.fonts.load('600 20px "Be Vietnam Pro"'); await document.fonts.load('400 20px "Be Vietnam Pro"'); } catch(e){}
-  const cfg = { delta: parseInt($('delta').value), trap: $('trapSel').value, tpl: tpl.value.trim(), showNum: $('showNum').checked, footer: $('footer').checked };
+  const cfg = { delta: parseInt($('delta').value), trap: $('trapSel').value, tpl: tpl.value.trim(), showNum: $('showNum').checked, footer: $('footer').checked, diag: $('diag').checked };
   items.forEach(i => URL.revokeObjectURL(i.url));
   items = [];
   const box = $('results'); box.innerHTML = '';
@@ -447,7 +459,7 @@ $('gen').addEventListener('click', async () => {
     const blob = await toBlob(r.canvas);
     const name = `cau-${String(q.n).padStart(2,'0')}.png`;
     const idx = items.length;
-    items.push({lead: q.text !== q.full ? q.lead : '', name, blob, url: URL.createObjectURL(blob), fs: r.fs, H: r.H, correct: q.opts.find(o => o.k === q.correct).t, trap: r.trap.t, n: q.n});
+    items.push({opts: q.opts, ck: q.correct, lead: q.text !== q.full ? q.lead : '', name, blob, url: URL.createObjectURL(blob), fs: r.fs, H: r.H, correct: q.opts.find(o => o.k === q.correct).t, trap: r.trap.t, n: q.n});
     if (r.tall) tallCount++;
     const card = document.createElement('div'); card.className = 'card';
     r.canvas.setAttribute('role','img'); r.canvas.setAttribute('aria-label', 'Ảnh câu ' + q.n);
@@ -461,7 +473,7 @@ $('gen').addEventListener('click', async () => {
     b.onclick = () => download(blob, name);
     meta.append(info, b); card.appendChild(meta); box.appendChild(card);
   }
-  $('resPanel').hidden = false; $('zip').disabled = false; $('embed').disabled = !origBuf;
+  $('resPanel').hidden = false; $('zip').disabled = false; $('embed').disabled = !origBuf; $('xml').disabled = false;
   showDevices(0);
   setStatus(`Đã tạo ${items.length} ảnh.` + (tallCount ? ` Có ${tallCount} câu quá dài nên ảnh cao hơn khung chuẩn (đánh dấu "dài"). Ảnh đó có thể phải cuộn trên màn hình nhỏ, nên cân nhắc rút gọn câu.` : ' Tất cả đều nằm trọn trong khung.'), tallCount ? 'err' : 'ok');
   $('resPanel').scrollIntoView({behavior:'smooth', block:'start'});
@@ -519,6 +531,46 @@ $('embed').addEventListener('click', async () => {
     download(out, (origName || 'de-thi') + '-cau-hoi-dang-hinh.docx');
     setStatus(`Đã chèn ${items.length} ảnh vào file .docx và tải về. Hãy mở bằng Word để kiểm tra trước khi dùng.`, 'ok');
   }catch(err){ setStatus('Không chèn được vào file .docx: ' + err.message, 'err'); }
+});
+
+const xesc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+async function toB64(blob){
+  const u = new Uint8Array(await blob.arrayBuffer()); let bin = '';
+  for (let i = 0; i < u.length; i += 0x8000) bin += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+$('xml').addEventListener('click', async () => {
+  if (!items.length) return;
+  try{
+    setStatus('Đang tạo file Moodle XML…');
+    const cat = xesc((origName || 'De thi anh').replace(/[\\/]/g,'-'));
+    const out = ['<?xml version="1.0" encoding="UTF-8"?>\n<quiz>\n<question type="category"><category><text>$course$/top/' + cat + '</text></category></question>\n'];
+    for (const it of items){
+      const b64 = await toB64(it.blob);
+      const fb = '<text></text>';
+      out.push(`<question type="multichoice">
+<name><text>Câu ${it.n}</text></name>
+<questiontext format="html"><text><![CDATA[<p><img src="@@PLUGINFILE@@/${it.name}" alt="Câu hỏi số ${it.n} (dạng hình ảnh)" width="${FRAME}" height="${it.H}" class="img-fluid" style="max-width:100%;height:auto;"/></p>]]></text>
+<file name="${it.name}" path="/" encoding="base64">${b64}</file></questiontext>
+<generalfeedback format="html">${fb}</generalfeedback>
+<defaultgrade>1.0000000</defaultgrade>
+<penalty>0.3333333</penalty>
+<hidden>0</hidden>
+<single>true</single>
+<shuffleanswers>true</shuffleanswers>
+<answernumbering>ABCD</answernumbering>
+<correctfeedback format="html">${fb}</correctfeedback>
+<partiallycorrectfeedback format="html">${fb}</partiallycorrectfeedback>
+<incorrectfeedback format="html">${fb}</incorrectfeedback>
+${it.opts.map(o => `<answer fraction="${o.k === it.ck ? 100 : 0}" format="html"><text><![CDATA[<p>${xesc(o.t)}</p>]]></text><feedback format="html">${fb}</feedback></answer>`).join('\n')}
+</question>
+`);
+    }
+    out.push('</quiz>\n');
+    const blob = new Blob(out, {type:'application/xml'});
+    download(blob, (origName || 'de-thi') + '-moodle.xml');
+    setStatus(`Đã xuất ${items.length} câu ra Moodle XML (${(blob.size/1048576).toFixed(1)} MB). Import tại Ngân hàng câu hỏi → Nhập → Moodle XML.`, 'ok');
+  }catch(err){ setStatus('Không xuất được Moodle XML: ' + err.message, 'err'); }
 });
 
 $('zip').addEventListener('click', async () => {
