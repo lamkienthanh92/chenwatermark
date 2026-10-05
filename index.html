@@ -61,8 +61,8 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .status.ok{color:var(--ok)} .status.err{color:var(--warn)}
 #results{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:10px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px}
-.card canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:4px;background:#fff;cursor:pointer}
-.card canvas.revealed{filter:contrast(38) brightness(.93)}
+.card img,.card canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:4px;background:#fff;cursor:pointer}
+.card img.revealed,.card canvas.revealed{filter:contrast(38) brightness(.93)}
 .card.sel{outline:2px solid var(--accent)}
 .meta{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:6px;font-size:12.5px;color:var(--muted)}
 .meta strong{color:var(--ink)}
@@ -203,7 +203,7 @@ tplSel.addEventListener('change', () => { if (tplSel.value !== 'custom') tpl.val
 tpl.addEventListener('input', () => { const k = Object.keys(TEMPLATES).find(k => TEMPLATES[k] === tpl.value); tplSel.value = k || 'custom'; });
 $('delta').addEventListener('input', e => $('deltaO').textContent = e.target.value);
 $('reveal').addEventListener('change', e => {
-  document.querySelectorAll('#results canvas').forEach(c => c.classList.toggle('revealed', e.target.checked));
+  document.querySelectorAll('#results img').forEach(c => c.classList.toggle('revealed', e.target.checked));
   document.querySelectorAll('.dev .view').forEach(v => v.classList.toggle('revealed', e.target.checked));
 });
 
@@ -299,20 +299,22 @@ function wrapText(ctx, text, maxW){
 
 const FONT = '"Be Vietnam Pro", system-ui, "Segoe UI", Arial, sans-serif';
 
+const MCTX = document.createElement('canvas').getContext('2d');
 function layoutText(q, cfg, W, H){
   const pad = 62, inner = W - pad*2;
-  const m = document.createElement('canvas').getContext('2d');
   const qText = (cfg.showNum ? `Câu ${q.n}. ` : '') + q.text;
-  let best = null;
-  for (let fs = 52; fs >= 30; fs--){
+  const at = fs => {
     const lh = Math.round(fs*1.5);
-    m.font = `600 ${fs}px ${FONT}`;
-    const qLines = wrapText(m, qText, inner);
-    const total = qLines.length*lh;
-    best = {fs, lh, qLines, total, pad};
-    if (total <= H - 48) return {...best, tall:false};
+    MCTX.font = `600 ${fs}px ${FONT}`;
+    const qLines = wrapText(MCTX, qText, inner);
+    return {fs, lh, qLines, total: qLines.length*lh, pad};
+  };
+  let lo = 30, hi = 52, best = null;
+  while (lo <= hi){
+    const mid = (lo + hi) >> 1, r = at(mid);
+    if (r.total <= H - 48){ best = r; lo = mid + 1; } else hi = mid - 1;
   }
-  return {...best, tall:true};
+  return best ? {...best, tall:false} : {...at(30), tall:true};
 }
 
 function drawWatermarkRows(ctx, text, W, H, wfs, wm, clip){
@@ -454,18 +456,25 @@ $('gen').addEventListener('click', async () => {
   items = [];
   const box = $('results'); box.innerHTML = '';
   let tallCount = 0;
-  for (const q of qs){
-    const r = render(q, cfg);
-    const blob = await toBlob(r.canvas);
+  const jobs = [];
+  for (let k = 0; k < qs.length; k++){
+    const r = render(qs[k], cfg);
+    jobs.push({q: qs[k], r, p: toBlob(r.canvas)});
+    if (k % 4 === 3){ setStatus(`Đang vẽ ${k+1}/${qs.length}…`); await new Promise(res => setTimeout(res, 0)); }
+  }
+  setStatus('Đang nén PNG…');
+  for (const {q, r, p} of jobs){
+    const blob = await p;
+    r.canvas.width = 0; r.canvas.height = 0;
     const name = `cau-${String(q.n).padStart(2,'0')}.png`;
-    const idx = items.length;
-    items.push({opts: q.opts, ck: q.correct, lead: q.text !== q.full ? q.lead : '', name, blob, url: URL.createObjectURL(blob), fs: r.fs, H: r.H, correct: q.opts.find(o => o.k === q.correct).t, trap: r.trap.t, n: q.n});
+    const idx = items.length, url = URL.createObjectURL(blob);
+    items.push({opts: q.opts, ck: q.correct, lead: q.text !== q.full ? q.lead : '', name, blob, url, fs: r.fs, H: r.H, correct: q.opts.find(o => o.k === q.correct).t, trap: r.trap.t, n: q.n});
     if (r.tall) tallCount++;
     const card = document.createElement('div'); card.className = 'card';
-    r.canvas.setAttribute('role','img'); r.canvas.setAttribute('aria-label', 'Ảnh câu ' + q.n);
-    r.canvas.addEventListener('click', () => showDevices(idx));
-    if ($('reveal').checked) r.canvas.classList.add('revealed');
-    card.appendChild(r.canvas);
+    const im = document.createElement('img'); im.src = url; im.alt = 'Ảnh câu ' + q.n; im.loading = 'lazy'; im.decoding = 'async';
+    im.addEventListener('click', () => showDevices(idx));
+    if ($('reveal').checked) im.classList.add('revealed');
+    card.appendChild(im);
     const meta = document.createElement('div'); meta.className = 'meta';
     const info = document.createElement('span');
     info.innerHTML = `Câu ${q.n}` + (r.tall ? '<span class="tag">dài</span>' : '') + (q.text !== q.full ? '<span class="tag">đã chỉnh</span>' : '');
