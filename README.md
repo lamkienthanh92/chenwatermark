@@ -21,7 +21,7 @@ Không có máy chủ, không gửi dữ liệu đi đâu. Đề thi chỉ nằm
 - **Thông báo quy chế thi ở góc trên và góc dưới ảnh** (chữ nhìn thấy được, song ngữ Việt/Anh) và watermark chữ mờ phủ nền cùng viền chữ siêu nhỏ.
 - **Chữ chéo "BÀI THI · CẤM DÙNG AI" ở giữa ảnh** (xám nhạt, nhìn thấy được, khó cắt bỏ mà không mất nội dung câu hỏi).
 - Phần **"Kiểm tra hiển thị"** mô phỏng khung điện thoại dọc và laptop ngang, kèm cỡ chữ thực tế ước tính. Công tắc "Xem như AI thấy" tăng tương phản để kiểm tra watermark có trong ảnh.
-- **Tải PNG từng câu hoặc cả zip** (kèm CSV ghi đáp án đúng và đáp án mồi nếu dùng mẫu có `{TRAP}`).
+- **Tải PNG từng câu hoặc cả zip** (kèm CSV ghi đáp án đúng).
 - **Xuất Moodle XML**: mỗi câu là ảnh làm đề bài (nhúng base64) kèm 4 phương án chữ, đáp án đúng theo `ANSWER`, bật trộn đáp án. Import tại *Ngân hàng câu hỏi → Nhập → Moodle XML*.
 - **Chèn ảnh vào `.docx` gốc**: thay đoạn câu hỏi bằng ảnh, giữ nguyên đáp án A–D và dòng `ANSWER`.
 
@@ -41,12 +41,12 @@ Nếu muốn chạy offline, tải các file đó về và sửa đường dẫn
 
 1. Chọn file `.docx` của đề (hoặc dán nội dung).
 2. Xem lại mục **Kiểm tra câu hỏi**, sửa nếu cần.
-3. Chọn mẫu watermark. Mặc định là **"Quy chế thi: nêu sự thật, không ra lệnh"**.
+3. Chọn mẫu thông báo quy chế. Mặc định là **"Quy chế thi: nêu sự thật, không ra lệnh"**.
 4. Bấm **Tạo ảnh**, kiểm tra phần xem trước, rồi bấm **Chèn ảnh vào file .docx gốc** hoặc **Tải tất cả (.zip)**.
 
 ## Hạn chế cần biết
 
-- **Chữ ẩn trong ảnh không đảm bảo ngăn AI.** Nhiều AI hiện nay đọc được chữ mờ, coi đó là dữ liệu chứ không phải mệnh lệnh, rồi bỏ qua và còn báo cho người dùng biết. Các mẫu "ra lệnh cho AI" (Diagnostic, NDA, đáp án mồi) đã được thử và thường bị bỏ qua, nên không khuyến nghị.
+- **Chữ ẩn trong ảnh không đảm bảo ngăn AI.** Nhiều AI hiện nay đọc được chữ mờ, coi đó là dữ liệu chứ không phải mệnh lệnh, rồi bỏ qua và còn báo cho người dùng biết. Các mẫu "ra lệnh cho AI" (Diagnostic, NDA, đáp án mồi) đã được thử, thường bị bỏ qua và có thể đánh lừa sinh viên, nên đã bị gỡ khỏi app. App chỉ giữ thông báo quy chế trung thực.
 - Thông báo quy chế hiện rõ chỉ có tác dụng răn đe sinh viên, và có thể khiến một số AI từ chối hoặc nhắc nhở. Không có gì đảm bảo.
 - Ảnh hóa câu hỏi chỉ chặn được sao chép văn bản. Sinh viên vẫn có thể chụp màn hình rồi hỏi AI.
 - **Khả năng tiếp cận:** người dùng trình đọc màn hình không đọc được câu hỏi trong ảnh. Cần có phương án hỗ trợ riêng cho sinh viên có nhu cầu.
